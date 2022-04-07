@@ -283,10 +283,30 @@ namespace CycloneDX {
                     {
                         foreach (var dep in package.Dependencies)
                         {
-                            transitiveDepencies.Add(bomRefLookup[(dep.Key.ToLower(CultureInfo.InvariantCulture), dep.Value.ToLower(CultureInfo.InvariantCulture))]);
+                            string dependencyName = dep.Key.ToLower(CultureInfo.InvariantCulture);
+                            string dependencyVersion = dep.Value.ToLower(CultureInfo.InvariantCulture);
+
+                            if (dependencyVersion.StartsWith("[", StringComparison.InvariantCulture))
+                            {
+                                dependencyVersion = dependencyVersion.Remove(0, 1);
+                                dependencyVersion = dependencyVersion.Split(",")[0];
+                            }
+
+                            if (dependencyVersion.EndsWith("]", StringComparison.InvariantCulture))
+                            {
+                                dependencyVersion = dependencyVersion.Remove(dependencyVersion.Length - 1);
+                            }
+
+                            if (!bomRefLookup.ContainsKey((dependencyName, dependencyVersion)))
+                            {
+                                System.Console.WriteLine($"Warning: Skipping dependency {dependencyName} {dependencyVersion}");
+                                continue;
+                            }
+
+                            transitiveDepencies.Add(bomRefLookup[(dependencyName, dependencyVersion)]);
                             packageDepencies.Dependencies.Add(new Dependency
                             {
-                                Ref = bomRefLookup[(dep.Key.ToLower(CultureInfo.InvariantCulture), dep.Value.ToLower(CultureInfo.InvariantCulture))]
+                                Ref = bomRefLookup[(dependencyName, dependencyVersion)]
                             });
                         }
                     }
